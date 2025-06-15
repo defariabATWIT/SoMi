@@ -32,9 +32,7 @@
                 {% if current_user.is_authenticated %} 
 	              <li>
 	                <form action="{{ url_for('logout') }}" method="POST" style="display:inline;">
-		              <button type="submit" style="font-size:16; background:none; border:none; color:inherit; font:inherit; cursor:pointer;">
-		                Logout
-		              </button>
+		              <button type="submit">Logout</button>
 	                </form>
 	              </li> 
                 {% endif %}
