@@ -10,18 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const savedTags = JSON.parse(localStorage.getItem("imageTags")) || {};
 
   // Initialize existing images
-  document.querySelectorAll('.draggable').forEach(img => {
-    const container = createImageContainer(img.src);
-    container.dataset.id = img.dataset.id || `cont_${idCounter++}`;
-    
-    // Transfer position data
-    const imgStyle = window.getComputedStyle(img);
-    container.style.left = imgStyle.left;
-    container.style.top = imgStyle.top;
-    
-    // Replace image element
-    img.replaceWith(container);
-    container.querySelector('img').src = img.src;
+  document.querySelectorAll('.image-container').forEach(container => {
     setupContainer(container);
   });
 
@@ -51,7 +40,17 @@ document.addEventListener("DOMContentLoaded", () => {
       method: "POST",
       body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+      // If your Flask upload returns JSON, you can check for success here
+      // Reload the page after successful upload
+      if (response.ok) {
+        location.reload();
+      } else {
+        response.json().then(data => {
+          alert(data.error || "Upload failed.");
+        });
+      }
+    })
     .then(data => {
       data.urls.forEach(url => {
         const container = createImageContainer(url);
@@ -82,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setupContainer(container) {
     // --- Position & Size Initialization ---
-    const savedData = savedTags[container.dataset.id];
+    let savedData = savedTags[container.dataset.id];
     container.style.position = "absolute";
     
     // Set default size
@@ -96,6 +95,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       container.style.left = Math.random() * (window.innerWidth - 200) + 20 + "px";
       container.style.top = Math.random() * (window.innerHeight - 200) + 20 + "px";
+      saveContainerState(container);
+      savedData = savedTags[container.dataset.id];
     }
   
     // --- Element References ---
