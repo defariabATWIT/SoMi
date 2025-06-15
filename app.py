@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, abort, send_from_directory, flash
+from flask import Flask, render_template, request, redirect, url_for, abort, send_from_directory, flash, jsonify
 from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -288,6 +288,31 @@ def uploaded_file(user_id, filename):
 
     # serve the image
     return send_from_directory(usr_directory, filename)
+
+# Delete that jittleyang
+@app.route('/delete_image', methods=['POST'])
+@login_required
+def delete_image():
+    data = request.get_json()
+    filename = data.get('filename')
+    user_id = data.get('user_id', current_user.id)  # fallback to current user
+
+    if not filename:
+        return jsonify({'error': 'No filename provided'}), 400
+
+    # Delete from database (if applicable)
+    outfit = Outfit.query.filter_by(name=filename, created_by=current_user.id).first()
+    if outfit:
+        db.session.delete(outfit)
+        db.session.commit()
+
+    # Delete file from disk
+    file_path = os.path.join(app.config['UPLOAD_PATH'], str(user_id), filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return jsonify({'success': True})
+    else:
+        return jsonify({'error': 'File not found'}), 404
 
 ###########################
 ###      END ROUTES     ###

@@ -194,9 +194,40 @@ document.addEventListener("DOMContentLoaded", () => {
           contRect.right > delRect.left &&
           contRect.top < delRect.bottom && 
           contRect.bottom > delRect.top) {
+        // DOM removal
         cont.remove();
+
+        //Remove client-side
         delete savedTags[cont.dataset.id];
         localStorage.setItem('imageTags', JSON.stringify(savedTags));
+
+        // Server-side deletion
+        const img = cont.querySelector('img');
+        let filename = null;
+        let user_id = null;
+        if (img) {
+          const url = new URL(img.src, window.location.origin);
+          // url.pathname: /uploads/<user_id>/<filename>
+          const parts = url.pathname.split('/');
+          user_id = parts[2];
+          filename = parts[3];
+        }
+        if (filename && user_id) {
+          fetch('/delete_image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename, user_id })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (!data.success) {
+              alert('Server failed to delete image: ' + (data.error || 'Unknown error'));
+            }
+          })
+          .catch(err => {
+            alert('Network or server error: ' + err);
+          });
+        }
       }
     }
   }
