@@ -122,7 +122,7 @@ def home():
 
 
     if not os.path.exists(user_directory):
-        return render_template('home.html', files="")
+        return render_template('home.html', files=[])
 
     # get all files in user directory 
     files = os.listdir(user_directory)
@@ -256,23 +256,12 @@ def upload_files():
         uploaded_file.save(filepath)
         flash('File uploaded successfully.')
 
-        # ------------- Convert AVIF and WEBP to JPG before processing -------------
-        if file_ext == ".avif" or file_ext == ".webp":
-            conversion_path = os.path.join(usr_upload_directory, filename)
-            input_path = convert_to_jpg(conversion_path)
-            output_path = os.path.join(usr_upload_directory, "processed-" + filename)
-
-            remove_background(input_path, output_path)
-
-        else:
-            # ------------- Call the remove_background function -------------
-            input_path = os.path.join(usr_upload_directory, filename)
-            output_path = os.path.join(usr_upload_directory, "processed-" + filename)
-
-            remove_background(input_path, output_path)
-        
-        # ------------- Remmove pre-processed image -------------
-        remove_image(input_path, output_path)
+        # Convert AVIF/WEBP to JPG and use the JPG as the displayed file
+        if file_ext in [".avif", ".webp"]:
+            input_path = filepath
+            jpg_path = convert_to_jpg(input_path)
+            # Optionally, remove the original file to only keep the JPG
+            os.remove(input_path)
 
     return redirect(url_for('home'))
 
@@ -345,6 +334,31 @@ def load_outfit(slot):
         return jsonify({'success': True, 'state': outfit.state})
     else:
         return jsonify({'success': False, 'error': 'No outfit saved in this slot'}), 404
+
+
+#####################################################################
+#                          remove background                        #
+@app.route('/remove_bg', methods=['POST'])
+@login_required
+def remove_bg():
+    data = request.get_json()
+    filename = data.get('filename')
+    user_id = current_user.id
+
+    if not filename:
+        return jsonify({'success': False, 'error': 'No filename provided'}), 400
+
+    usr_upload_directory = os.path.join(app.config['UPLOAD_PATH'], str(user_id))
+    input_path = os.path.join(usr_upload_directory, filename)
+    output_path = os.path.join(usr_upload_directory, "processed-" + filename)
+
+    try:
+        remove_background(input_path, output_path)
+        # Optionally, replace the original image with the processed one
+        os.replace(output_path, input_path)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 ###########################
 ###      END ROUTES     ###

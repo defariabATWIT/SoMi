@@ -241,12 +241,14 @@ document.addEventListener("DOMContentLoaded", () => {
     <label>Name: <input type="text" class="name-input"></label>
     <label>Link: <input type="text" class="link-input"></label>
     <button class="save-tags-btn">Save</button>
+    <button class="remove-bg-btn">Remove Background</button>
   `;
   document.body.appendChild(tagForm);
 
   function openTagForm(e, container) {
     const containerId = container.dataset.id;
     const tags = savedTags[containerId]?.tags || {};
+    currentTagContainer = container;
     
     // Position form at click location
     tagForm.style.display = "block";
@@ -274,6 +276,32 @@ document.addEventListener("DOMContentLoaded", () => {
       };
       localStorage.setItem('imageTags', JSON.stringify(savedTags));
       tagForm.style.display = "none";
+    };
+
+    // Remove background handler
+    tagForm.querySelector('.remove-bg-btn').onclick = () => {
+      const img = currentTagContainer.querySelector('img');
+      let filename = null;
+      if (img) {
+        const url = new URL(img.src, window.location.origin);
+        filename = url.pathname.split('/').pop();
+      }
+      if (filename) {
+        fetch('/remove_bg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            img.src = img.src.split('?')[0] + '?t=' + Date.now();
+            alert('Background removed!');
+          } else {
+            alert('Failed to remove background: ' + (data.error || 'Unknown error'));
+          }
+        });
+      }
     };
   }
 });
