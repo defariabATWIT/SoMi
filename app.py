@@ -52,13 +52,15 @@ class User(UserMixin, db.Model):
 
 # Outfit
 class Outfit(db.Model):
+    __tablename__ = 'Outfits'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    slot = db.Column(db.Integer, nullable=False)  # 1-9
+    state = db.Column(db.Text, nullable=False)    # JSON string of canvas state
 
-    __tablename__='Outfits'
-
-    id = db.Column(db.String(128), primary_key=True)
-    name = db.Column(db.String(128), unique=True)
-    created_by = db.Column(db.Integer, unique=False)
-    data = db.Column(db.LargeBinary, nullable=False)
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'slot', name='unique_user_slot'),
+    )
 
 ##########################
 ###   END POSTGRESQL   ###
@@ -313,6 +315,36 @@ def delete_image():
         return jsonify({'success': True})
     else:
         return jsonify({'error': 'File not found'}), 404
+    
+#####################################################################
+#                          save outfit                              #   
+@app.route('/save_outfit', methods=['POST'])
+@login_required
+def save_outfit():
+    data = request.get_json()
+    slot = data.get('slot')
+    state = data.get('state')  # JSON string
+
+    if not (slot and state):
+        return jsonify({'success': False, 'error': 'Missing slot or state'}), 400
+
+    outfit = Outfit.query.filter_by(user_id=current_user.id, slot=slot).first()
+    if outfit:
+        outfit.state = state
+    else:
+        outfit = Outfit(user_id=current_user.id, slot=slot, state=state)
+        db.session.add(outfit)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/load_outfit/<int:slot>', methods=['GET'])
+@login_required
+def load_outfit(slot):
+    outfit = Outfit.query.filter_by(user_id=current_user.id, slot=slot).first()
+    if outfit:
+        return jsonify({'success': True, 'state': outfit.state})
+    else:
+        return jsonify({'success': False, 'error': 'No outfit saved in this slot'}), 404
 
 ###########################
 ###      END ROUTES     ###
