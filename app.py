@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, abort, send_from_directory, flash
+from flask import Flask, render_template, request, redirect, url_for, abort, send_from_directory, flash, jsonify
 from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -52,13 +52,15 @@ class User(UserMixin, db.Model):
 
 # Outfit
 class Outfit(db.Model):
+    __tablename__ = 'Outfits'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    slot = db.Column(db.Integer, nullable=False)  # 1-9
+    state = db.Column(db.Text, nullable=False)    # JSON string of canvas state
 
-    __tablename__='Outfits'
-
-    id = db.Column(db.String(128), primary_key=True)
-    name = db.Column(db.String(128), unique=True)
-    created_by = db.Column(db.Integer, unique=False)
-    data = db.Column(db.LargeBinary, nullable=False)
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'slot', name='unique_user_slot'),
+    )
 
 ##########################
 ###   END POSTGRESQL   ###
@@ -120,7 +122,7 @@ def home():
 
 
     if not os.path.exists(user_directory):
-        return render_template('home.html', files="")
+        return render_template('home.html', files=[])
 
     # get all files in user directory 
     files = os.listdir(user_directory)
@@ -254,23 +256,12 @@ def upload_files():
         uploaded_file.save(filepath)
         flash('File uploaded successfully.')
 
-        # ------------- Convert AVIF and WEBP to JPG before processing -------------
-        if file_ext == ".avif" or file_ext == ".webp":
-            conversion_path = os.path.join(usr_upload_directory, filename)
-            input_path = convert_to_jpg(conversion_path)
-            output_path = os.path.join(usr_upload_directory, "processed-" + filename)
-
-            remove_background(input_path, output_path)
-
-        else:
-            # ------------- Call the remove_background function -------------
-            input_path = os.path.join(usr_upload_directory, filename)
-            output_path = os.path.join(usr_upload_directory, "processed-" + filename)
-
-            remove_background(input_path, output_path)
-        
-        # ------------- Remmove pre-processed image -------------
-        remove_image(input_path, output_path)
+        # Convert AVIF/WEBP to JPG and use the JPG as the displayed file
+        if file_ext in [".avif", ".webp"]:
+            input_path = filepath
+            jpg_path = convert_to_jpg(input_path)
+            # Optionally, remove the original file to only keep the JPG
+            os.remove(input_path)
 
     return redirect(url_for('home'))
 
@@ -288,6 +279,86 @@ def uploaded_file(user_id, filename):
 
     # serve the image
     return send_from_directory(usr_directory, filename)
+
+# Delete that jittleyang
+@app.route('/delete_image', methods=['POST'])
+@login_required
+def delete_image():
+    data = request.get_json()
+    filename = data.get('filename')
+    user_id = data.get('user_id', current_user.id)  # fallback to current user
+
+    if not filename:
+        return jsonify({'error': 'No filename provided'}), 400
+
+    # Delete from database (if applicable)
+    outfit = Outfit.query.filter_by(name=filename, created_by=current_user.id).first()
+    if outfit:
+        db.session.delete(outfit)
+        db.session.commit()
+
+    # Delete file from disk
+    file_path = os.path.join(app.config['UPLOAD_PATH'], str(user_id), filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return jsonify({'success': True})
+    else:
+        return jsonify({'error': 'File not found'}), 404
+    
+#####################################################################
+#                          save outfit                              #   
+@app.route('/save_outfit', methods=['POST'])
+@login_required
+def save_outfit():
+    data = request.get_json()
+    slot = data.get('slot')
+    state = data.get('state')  # JSON string
+
+    if not (slot and state):
+        return jsonify({'success': False, 'error': 'Missing slot or state'}), 400
+
+    outfit = Outfit.query.filter_by(user_id=current_user.id, slot=slot).first()
+    if outfit:
+        outfit.state = state
+    else:
+        outfit = Outfit(user_id=current_user.id, slot=slot, state=state)
+        db.session.add(outfit)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/load_outfit/<int:slot>', methods=['GET'])
+@login_required
+def load_outfit(slot):
+    outfit = Outfit.query.filter_by(user_id=current_user.id, slot=slot).first()
+    if outfit:
+        return jsonify({'success': True, 'state': outfit.state})
+    else:
+        return jsonify({'success': False, 'error': 'No outfit saved in this slot'}), 404
+
+
+#####################################################################
+#                          remove background                        #
+@app.route('/remove_bg', methods=['POST'])
+@login_required
+def remove_bg():
+    data = request.get_json()
+    filename = data.get('filename')
+    user_id = current_user.id
+
+    if not filename:
+        return jsonify({'success': False, 'error': 'No filename provided'}), 400
+
+    usr_upload_directory = os.path.join(app.config['UPLOAD_PATH'], str(user_id))
+    input_path = os.path.join(usr_upload_directory, filename)
+    output_path = os.path.join(usr_upload_directory, "processed-" + filename)
+
+    try:
+        remove_background(input_path, output_path)
+        # Optionally, replace the original image with the processed one
+        os.replace(output_path, input_path)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 ###########################
 ###      END ROUTES     ###

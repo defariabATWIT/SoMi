@@ -54,16 +54,20 @@
         <input type="file" id="file-input" accept="image/*" multiple hidden />
       </div>
 
-      <div class="container">
-        {% for file in files %}
+    {% for file in files %}
+      <div class="image-container" data-id="{{ file }}" style="position:absolute; width:150px; height:150px;">
         <img
           class="draggable"
           src="{{ url_for('uploaded_file', filename=file, user_id=current_user.id) }}"
           alt="{{ file }}"
-          width="200"
+          style="width:100%; height:100%; object-fit:contain;"
         />
-        {% endfor %}
+        <div class="resize-handle"></div>
       </div>
+    {% endfor %}
+
+      <div id="upload-status"></div>
+      <button id="upload-btn">Upload</button>
     </div>
     <div id="delete-box">Delete</div>
     <script src="{{ url_for('static', filename='js/home.js') }}"></script>

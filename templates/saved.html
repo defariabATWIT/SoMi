@@ -42,23 +42,22 @@
     </nav>
 
     <div class="saved-outfits-container">
-        <div class="outfit-numbers">
-            <span class="number" data-index="1">1</span>
-            <span class="number" data-index="2">2</span>
-            <span class="number" data-index="3">3</span>
-            <span class="number" data-index="4">4</span>
-            <span class="number" data-index="5">5</span>
-            <span class="number" data-index="6">6</span>
-            <span class="number" data-index="7">7</span>
-            <span class="number" data-index="8">8</span>
-            <span class="number" data-index="9">9</span>
-        </div>
-
-        <div class="outfit-preview">
-            <p>(Outfit preview goes here)</p>
-        </div>
+    <div class="outfit-numbers">
+        {% for i in range(1, 10) %}
+            <span class="number" data-index="{{ i }}">{{ i }}</span>
+        {% endfor %}
     </div>
-    <script src="{{ url_for('static', filename='js/saved.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/global.js') }}"></script>
+
+    <div class="outfit-actions">
+        <button id="save-outfit-btn" disabled>Save to Slot</button>
+        <button id="load-outfit-btn" disabled>Load from Slot</button>
+    </div>
+
+    <div class="outfit-preview">
+        <p>(Outfit preview goes here)</p>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/saved.js') }}"></script>
+<script src="{{ url_for('static', filename='js/global.js') }}"></script>
 </body>
 </html>

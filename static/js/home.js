@@ -10,18 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const savedTags = JSON.parse(localStorage.getItem("imageTags")) || {};
 
   // Initialize existing images
-  document.querySelectorAll('.draggable').forEach(img => {
-    const container = createImageContainer(img.src);
-    container.dataset.id = img.dataset.id || `cont_${idCounter++}`;
-    
-    // Transfer position data
-    const imgStyle = window.getComputedStyle(img);
-    container.style.left = imgStyle.left;
-    container.style.top = imgStyle.top;
-    
-    // Replace image element
-    img.replaceWith(container);
-    container.querySelector('img').src = img.src;
+  document.querySelectorAll('.image-container').forEach(container => {
     setupContainer(container);
   });
 
@@ -51,7 +40,17 @@ document.addEventListener("DOMContentLoaded", () => {
       method: "POST",
       body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+      // If your Flask upload returns JSON, you can check for success here
+      // Reload the page after successful upload
+      if (response.ok) {
+        location.reload();
+      } else {
+        response.json().then(data => {
+          alert(data.error || "Upload failed.");
+        });
+      }
+    })
     .then(data => {
       data.urls.forEach(url => {
         const container = createImageContainer(url);
@@ -82,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setupContainer(container) {
     // --- Position & Size Initialization ---
-    const savedData = savedTags[container.dataset.id];
+    let savedData = savedTags[container.dataset.id];
     container.style.position = "absolute";
     
     // Set default size
@@ -96,6 +95,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       container.style.left = Math.random() * (window.innerWidth - 200) + 20 + "px";
       container.style.top = Math.random() * (window.innerHeight - 200) + 20 + "px";
+      saveContainerState(container);
+      savedData = savedTags[container.dataset.id];
     }
   
     // --- Element References ---
@@ -193,9 +194,40 @@ document.addEventListener("DOMContentLoaded", () => {
           contRect.right > delRect.left &&
           contRect.top < delRect.bottom && 
           contRect.bottom > delRect.top) {
+        // DOM removal
         cont.remove();
+
+        //Remove client-side
         delete savedTags[cont.dataset.id];
         localStorage.setItem('imageTags', JSON.stringify(savedTags));
+
+        // Server-side deletion
+        const img = cont.querySelector('img');
+        let filename = null;
+        let user_id = null;
+        if (img) {
+          const url = new URL(img.src, window.location.origin);
+          // url.pathname: /uploads/<user_id>/<filename>
+          const parts = url.pathname.split('/');
+          user_id = parts[2];
+          filename = parts[3];
+        }
+        if (filename && user_id) {
+          fetch('/delete_image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename, user_id })
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (!data.success) {
+              alert('Server failed to delete image: ' + (data.error || 'Unknown error'));
+            }
+          })
+          .catch(err => {
+            alert('Network or server error: ' + err);
+          });
+        }
       }
     }
   }
@@ -209,12 +241,14 @@ document.addEventListener("DOMContentLoaded", () => {
     <label>Name: <input type="text" class="name-input"></label>
     <label>Link: <input type="text" class="link-input"></label>
     <button class="save-tags-btn">Save</button>
+    <button class="remove-bg-btn">Remove Background</button>
   `;
   document.body.appendChild(tagForm);
 
   function openTagForm(e, container) {
     const containerId = container.dataset.id;
     const tags = savedTags[containerId]?.tags || {};
+    currentTagContainer = container;
     
     // Position form at click location
     tagForm.style.display = "block";
@@ -242,6 +276,32 @@ document.addEventListener("DOMContentLoaded", () => {
       };
       localStorage.setItem('imageTags', JSON.stringify(savedTags));
       tagForm.style.display = "none";
+    };
+
+    // Remove background handler
+    tagForm.querySelector('.remove-bg-btn').onclick = () => {
+      const img = currentTagContainer.querySelector('img');
+      let filename = null;
+      if (img) {
+        const url = new URL(img.src, window.location.origin);
+        filename = url.pathname.split('/').pop();
+      }
+      if (filename) {
+        fetch('/remove_bg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            img.src = img.src.split('?')[0] + '?t=' + Date.now();
+            alert('Background removed!');
+          } else {
+            alert('Failed to remove background: ' + (data.error || 'Unknown error'));
+          }
+        });
+      }
     };
   }
 });
