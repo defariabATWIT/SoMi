@@ -18,10 +18,14 @@ app = Flask(__name__)
 # image upload configurations
 app.config['MAX_CONTENT_LENGTH'] = 8000000 # 8 MB file limit
 app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.avif', '.HEIC']
-app.config['UPLOAD_PATH'] = '/var/www/somi/uploads/'
+app.config['UPLOAD_PATH'] = UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+#app.config['UPLOAD_PATH'] = '/var/www/somi/uploads/'
 
 # connect to postgresql
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://somiadmin:sweng2025@localhost/somidb'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://somidb_user:yNm8cgJXHvjTiHG1r8y936wAVBm0z1bk@dpg-d1nf6vp5pdvs739cn6ag-a/somidb' #postgresql://somiadmin:sweng2025@localhost/somidb
 # create key for hash
 app.config['SECRET_KEY'] = '123'
 # initialize SQLAlchemy
@@ -366,5 +370,5 @@ def remove_bg():
 
 #####################################################################
 
-if __name__ == ("__main__"):
-    app.run(debug=True)
+#if __name__ == ("__main__"):
+#    app.run(debug=True)
