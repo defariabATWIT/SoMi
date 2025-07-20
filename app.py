@@ -25,7 +25,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 #app.config['UPLOAD_PATH'] = '/var/www/somi/uploads/'
 
 # connect to postgresql
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://somidb_user:yNm8cgJXHvjTiHG1r8y936wAVBm0z1bk@dpg-d1nf6vp5pdvs739cn6ag-a/somidb' #postgresql://somiadmin:sweng2025@localhost/somidb
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://somi_database_bhz4_user:XmVpgYlrnzIdCFrrwltUx2i9edn8OPRc@dpg-d1ukkqbe5dus73dqmm20-a/somi_database_bhz4' #postgresql://somiadmin:sweng2025@localhost/somidb
 # create key for hash
 app.config['SECRET_KEY'] = '123'
 # initialize SQLAlchemy
