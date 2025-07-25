@@ -108,7 +108,7 @@ body {
 }
 
 /* Saved Outfits Section */
-.saved-outfits-container {
+/*.saved-outfits-container {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -125,7 +125,23 @@ body {
     margin-left: 90px; 
     margin-top: 40px;
 }
+*/
+.saved-outfits-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  width: 100%;
+  margin-left: 0;
+  padding-left: 20px; /* Small gap from the left */
+}
 
+.outfit-numbers {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 10px;
+}
 .number {
     font-size: 2rem;
     cursor: pointer;
@@ -141,12 +157,13 @@ body {
     padding: 5px 10px;
 }
 
-.outfit-preview {
+/* .outfit-preview {
     font-size: 1.2rem;
     text-align: center;
     align-self: center;
     margin: 0 auto;
 }
+*/
 
 .number.selected {
   background: #333;
@@ -157,4 +174,46 @@ body {
   margin: 1em 0;
   display: flex;
   gap: 1em;
+}
+
+.outfit-actions {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px; /* small gap between buttons */
+    z-index: 1000; /* ensures it stays on top */
+}
+
+.outfit-actions {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 12px;
+    z-index: 1000;
+}
+
+.outfit-actions button {
+    padding: 18px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #4d5efc;
+    background-color: #f7f7fc;
+    border: 3px solid #4d5efc; /* Solid border instead of dashed */
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.outfit-actions button:hover:not(:disabled) {
+    background-color: #e1e6ff;
+    transform: translateY(-1px);
+}
+
+.outfit-actions button:disabled {
+    background-color: #f0f0f0;
+    border-color: #bbb;
+    color: #aaa;
+    cursor: not-allowed;
 }
