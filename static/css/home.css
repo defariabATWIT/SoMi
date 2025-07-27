@@ -48,8 +48,8 @@ input::file-selector-button {
   line-height: 80px;
   cursor: pointer;
   position: absolute;
-  bottom: 20px;
-  right: 20px;
+  bottom: 4px;
+  right: 10px;
   background-color: rgba(76, 107, 244, 0.05);
   transition: all 0.3s ease;
   color: #4c6bf4;
@@ -199,7 +199,7 @@ input::file-selector-button {
 .outfit-actions {
     position: fixed;
     bottom: 20px;
-    right: 300px;
+    right: 10px;
     display: flex;
     flex-direction: row;
     gap: 12px; /* space between Save and Upload buttons */
@@ -228,4 +228,9 @@ input::file-selector-button {
     border-color: #bbb;
     color: #aaa;
     cursor: not-allowed;
+}
+
+#save-outfit-btn {
+  margin-right: 270px;
+  bottom: 300px
 }
