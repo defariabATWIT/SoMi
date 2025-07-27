@@ -32,6 +32,28 @@ document.addEventListener("DOMContentLoaded", () => {
     handleFiles(e.dataTransfer.files);
   });
 
+  let currentSlot = 1; // Default to 1
+
+  document.getElementById('save-outfit-btn').addEventListener('click', () => {
+    const state = localStorage.getItem('imageTags');
+    html2canvas(document.body).then(canvas => {
+      const snapshot = canvas.toDataURL('image/png');
+      fetch('/save_outfit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slot: currentSlot, state, snapshot })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert('Outfit saved!');
+        } else {
+          alert('Save failed: ' + data.error);
+        }
+      });
+    });
+  });
+
   function handleFiles(files) {
     const formData = new FormData();
     Array.from(files).forEach(file => formData.append("file", file));

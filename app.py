@@ -1,3 +1,4 @@
+import base64
 import os
 from flask import Flask, render_template, request, redirect, url_for, abort, send_from_directory, flash, jsonify
 from werkzeug.utils import secure_filename
@@ -24,8 +25,11 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 #app.config['UPLOAD_PATH'] = '/var/www/somi/uploads/'
 
-# connect to postgresql
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://somi_database_bhz4_user:XmVpgYlrnzIdCFrrwltUx2i9edn8OPRc@dpg-d1ukkqbe5dus73dqmm20-a/somi_database_bhz4' #postgresql://somiadmin:sweng2025@localhost/somidb
+# Connect to postgresql, hosted on render.com
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://somi_database_bhz4_user:XmVpgYlrnzIdCFrrwltUx2i9edn8OPRc@dpg-d1ukkqbe5dus73dqmm20-a/somi_database_bhz4' 
+# Local Host, uncomment below line for local testing
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://somiadmin:sweng2025@localhost/somidb'
+
 # create key for hash
 app.config['SECRET_KEY'] = '123'
 # initialize SQLAlchemy
@@ -61,6 +65,7 @@ class Outfit(db.Model):
     user_id = db.Column(db.Integer, nullable=False)
     slot = db.Column(db.Integer, nullable=False)  # 1-9
     state = db.Column(db.Text, nullable=False)    # JSON string of canvas state
+    snapshot = db.Column(db.Text, nullable=True)  # base64 PNG string
 
     __table_args__ = (
         db.UniqueConstraint('user_id', 'slot', name='unique_user_slot'),
@@ -131,7 +136,7 @@ def home():
     # get all files in user directory 
     files = os.listdir(user_directory)
     #render canvas and all files
-    return render_template('home.html', files=files)
+    return render_template('home.html', files=files, current_slot=1)
 
 #####################################################################
 #                            saved outfits                          #
@@ -140,7 +145,11 @@ def home():
 @app.route('/saved')
 @login_required
 def saved():
-    return render_template('saved.html')
+    user_id = current_user.id
+    outfits = Outfit.query.filter_by(user_id=user_id).all()
+    # Map slot number to snapshot (or None)
+    snapshots = {o.slot: o.snapshot for o in outfits}
+    return render_template('saved.html', snapshots=snapshots)
 
 #####################################################################
 #                        account registration                       #
@@ -316,19 +325,30 @@ def delete_image():
 def save_outfit():
     data = request.get_json()
     slot = data.get('slot')
-    state = data.get('state')  # JSON string
+    state = data.get('state')
+    snapshot = data.get('snapshot')
 
-    if not (slot and state):
-        return jsonify({'success': False, 'error': 'Missing slot or state'}), 400
+    user_id = current_user.id
+    user_dir = os.path.join('user_data', str(user_id))
+    snapshots_dir = os.path.join(user_dir, 'snapshots')
+    os.makedirs(snapshots_dir, exist_ok=True)
 
-    outfit = Outfit.query.filter_by(user_id=current_user.id, slot=slot).first()
-    if outfit:
-        outfit.state = state
-    else:
-        outfit = Outfit(user_id=current_user.id, slot=slot, state=state)
-        db.session.add(outfit)
-    db.session.commit()
-    return jsonify({'success': True})
+    # Save JSON state
+    with open(os.path.join(user_dir, f'slot_{slot}.json'), 'w') as f:
+        f.write(state)
+
+    # Save PNG image (if provided)
+    if snapshot:
+        try:
+            header, encoded = snapshot.split(',', 1)
+            print("Snapshot starts with:", snapshot[:30])
+            image_data = base64.b64decode(encoded)
+            with open(os.path.join(snapshots_dir, f'slot_{slot}.png'), 'wb') as f:
+                f.write(image_data)
+        except Exception as e:
+            return jsonify(success=False, error=f"Snapshot decode failed: {str(e)}")
+
+    return jsonify(success=True)
 
 @app.route('/load_outfit/<int:slot>', methods=['GET'])
 @login_required
@@ -338,6 +358,11 @@ def load_outfit(slot):
         return jsonify({'success': True, 'state': outfit.state})
     else:
         return jsonify({'success': False, 'error': 'No outfit saved in this slot'}), 404
+
+
+@app.route('/snapshots/<user_id>/<filename>')
+def serve_snapshot(user_id, filename):
+    return send_from_directory(f"user_data/{user_id}/snapshots", filename)
 
 
 #####################################################################

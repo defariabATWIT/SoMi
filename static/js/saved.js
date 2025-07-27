@@ -12,24 +12,6 @@ document.querySelectorAll('.number').forEach(span => {
   });
 });
 
-document.getElementById('save-outfit-btn').addEventListener('click', () => {
-  if (!selectedSlot) return;
-  const state = localStorage.getItem('imageTags');
-  fetch('/save_outfit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ slot: selectedSlot, state })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      alert('Outfit saved to slot ' + selectedSlot);
-    } else {
-      alert('Save failed: ' + data.error);
-    }
-  });
-});
-
 document.getElementById('load-outfit-btn').addEventListener('click', () => {
   if (!selectedSlot) return;
   fetch(`/load_outfit/${selectedSlot}`)

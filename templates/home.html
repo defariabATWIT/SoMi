@@ -13,6 +13,7 @@
       rel="stylesheet"
       />
       <link rel="icon" href="he-logo.png" />
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
     <header class="navbar">
@@ -67,7 +68,14 @@
     {% endfor %}
 
       <div id="upload-status"></div>
-      <button id="upload-btn">Upload</button>
+    </div>
+
+    <div class="outfit-actions">
+      <button id="save-outfit-btn">Save Outfit</button>
+    </div>
+
+    <div id="current-outfit-indicator">
+      Outfit <span id="current-outfit-number">{{ current_slot }}</span>
     </div>
     <div id="delete-box">Delete</div>
     <script src="{{ url_for('static', filename='js/home.js') }}"></script>
