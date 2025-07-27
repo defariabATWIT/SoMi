@@ -49,12 +49,6 @@
     <div id="gallery"></div>
 
     <div class="form-container">
-      <div id="drop-zone">
-        Drag Image or Click to Upload
-        <span id="file-upload-btn"></span>
-        <input type="file" id="file-input" accept="image/*" multiple hidden />
-      </div>
-
     {% for file in files %}
       <div class="image-container" data-id="{{ file }}" style="position:absolute; width:150px; height:150px;">
         <img
@@ -72,6 +66,11 @@
 
     <div class="outfit-actions">
       <button id="save-outfit-btn">Save Outfit</button>
+      <div id="drop-zone">
+        Drag Image or Click to Upload
+        <span id="file-upload-btn"></span>
+        <input type="file" id="file-input" accept="image/*" multiple hidden />
+      </div>
     </div>
 
     <div id="current-outfit-indicator">
