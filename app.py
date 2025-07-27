@@ -304,12 +304,6 @@ def delete_image():
     if not filename:
         return jsonify({'error': 'No filename provided'}), 400
 
-    # Delete from database (if applicable)
-    outfit = Outfit.query.filter_by(name=filename, created_by=current_user.id).first()
-    if outfit:
-        db.session.delete(outfit)
-        db.session.commit()
-
     # Delete file from disk
     file_path = os.path.join(app.config['UPLOAD_PATH'], str(user_id), filename)
     if os.path.exists(file_path):
