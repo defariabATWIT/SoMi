@@ -50,8 +50,14 @@ document.addEventListener("DOMContentLoaded", () => {
     handleFiles(e.dataTransfer.files);
   });
 
-  // Use localStorage for currentSlot, default to 1 if not set
-  let currentSlot = parseInt(localStorage.getItem("currentSlot") || "1", 10);
+  // Get slot from URL, fallback to 1
+  function getSlotFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return parseInt(params.get("slot") || "1", 10);
+  }
+
+  let currentSlot = getSlotFromUrl();
+  localStorage.setItem("currentSlot", currentSlot);
 
   // Function to switch slot and clear/load state
   function switchToSlot(slot) {
