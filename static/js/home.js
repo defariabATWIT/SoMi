@@ -7,7 +7,23 @@ document.addEventListener("DOMContentLoaded", () => {
   let idCounter = 0;
 
   // --- State Management ---
-  const savedTags = JSON.parse(localStorage.getItem("imageTags")) || {};
+  let savedTags = JSON.parse(localStorage.getItem("imageTags")) || {};
+
+  // Remove tags for images not present in this slot
+  // Use only filename as the key, not slot-filename
+  const presentIds = Array.from(
+    document.querySelectorAll(".image-container")
+  ).map((container) => container.dataset.id);
+  let changed = false;
+  for (const id in savedTags) {
+    if (!presentIds.includes(id)) {
+      delete savedTags[id];
+      changed = true;
+    }
+  }
+  if (changed) {
+    localStorage.setItem("imageTags", JSON.stringify(savedTags));
+  }
 
   // Initialize existing images
   document.querySelectorAll(".image-container").forEach((container) => {
@@ -42,18 +58,24 @@ document.addEventListener("DOMContentLoaded", () => {
     currentSlot = slot;
     localStorage.setItem("currentSlot", slot);
 
+    // Clear image state and gallery DOM
+    localStorage.setItem("imageTags", "{}");
+    const gallery = document.getElementById("gallery");
+    if (gallery) {
+      gallery.innerHTML = "";
+    }
+
     // Try to load outfit state for this slot
     fetch(`/load_outfit/${slot}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
-          // Load state into localStorage and reload
           localStorage.setItem("imageTags", data.state);
         } else {
-          // No outfit saved: clear canvas state
           localStorage.setItem("imageTags", "{}");
         }
-        location.reload();
+        // Reload with slot in URL so backend loads correct images
+        window.location.href = `/home?slot=${slot}`;
       });
   }
 
@@ -61,6 +83,19 @@ document.addEventListener("DOMContentLoaded", () => {
   window.switchToSlot = switchToSlot;
 
   document.getElementById("save-outfit-btn").addEventListener("click", () => {
+    // Before saving, filter out any keys in imageTags that do not correspond to files in the current slot
+    const presentFiles = Array.from(
+      document.querySelectorAll(".image-container")
+    ).map((container) => container.dataset.id); // Use filename as id
+
+    let imageTags = JSON.parse(localStorage.getItem("imageTags")) || {};
+    for (const key in imageTags) {
+      if (!presentFiles.includes(key)) {
+        delete imageTags[key];
+      }
+    }
+    localStorage.setItem("imageTags", JSON.stringify(imageTags));
+
     const state = localStorage.getItem("imageTags");
     html2canvas(document.body).then((canvas) => {
       const snapshot = canvas.toDataURL("image/png");
@@ -81,33 +116,27 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function handleFiles(files) {
-    const formData = new FormData();
-    Array.from(files).forEach((file) => formData.append("file", file));
-    formData.append("slot", currentSlot); // Add slot info
+    // Only upload one file per request for backend compatibility
+    Array.from(files).forEach((file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("slot", currentSlot); // Add slot info
 
-    fetch("/upload", {
-      method: "POST",
-      body: formData,
-    })
-      .then((response) => {
-        // If your Flask upload returns JSON, you can check for success here
-        // Reload the page after successful upload
-        if (response.ok) {
-          location.reload();
-        } else {
-          response.json().then((data) => {
-            alert(data.error || "Upload failed.");
-          });
-        }
+      fetch("/upload", {
+        method: "POST",
+        body: formData,
       })
-      .then((data) => {
-        data.urls.forEach((url) => {
-          const container = createImageContainer(url);
-          container.dataset.id = `cont_${idCounter++}`;
-          setupContainer(container);
-        });
-      })
-      .catch(console.error);
+        .then((response) => {
+          if (response.ok) {
+            location.reload();
+          } else {
+            response.json().then((data) => {
+              alert(data.error || "Upload failed.");
+            });
+          }
+        })
+        .catch(console.error);
+    });
   }
 
   // --- Container Management ---
@@ -122,6 +151,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const resizeHandle = document.createElement("div");
     resizeHandle.className = "resize-handle";
+
+    // Use only filename as data-id
+    const url = new URL(src, window.location.origin);
+    const filename = url.pathname.split("/").pop();
+    container.dataset.id = filename;
 
     container.append(img, resizeHandle);
     gallery.appendChild(container);
@@ -333,6 +367,19 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       // Save full outfit
+      // Before saving, filter out any keys in imageTags that do not correspond to files in the current slot
+      const presentFiles = Array.from(
+        document.querySelectorAll(".image-container")
+      ).map((container) => container.dataset.id);
+
+      let imageTags = JSON.parse(localStorage.getItem("imageTags")) || {};
+      for (const key in imageTags) {
+        if (!presentFiles.includes(key)) {
+          delete imageTags[key];
+        }
+      }
+      localStorage.setItem("imageTags", JSON.stringify(imageTags));
+
       const state = localStorage.getItem("imageTags");
       html2canvas(document.body).then((canvas) => {
         const snapshot = canvas.toDataURL("image/png");

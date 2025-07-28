@@ -8,58 +8,66 @@
     <link rel="stylesheet" href="/static/css/home.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link 
-      href="https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@700&display=swap" 
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@700&display=swap"
       rel="stylesheet"
-      />
-      <link rel="icon" href="he-logo.png" />
+    />
+    <link rel="icon" href="he-logo.png" />
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <header class="navbar">
-        <div class="navbar__container">
-            <a href="{{ url_for('home') }}" id="navbar__logo">SoMi</a>
-          </div>
-            <div class="hamburger" id="hamburger-menu">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-        </div>
-        <div class="sidebar" id="sidebar">
-            <button class="close-btn" id="close-menu">&times;</button>
-            <ul>
-                <li><a href="{{ url_for('home') }}">Home</a></li>
-                {% if current_user.is_authenticated %}
-                <li><a href="{{ url_for('saved')}}">Saved</a></li>
-                {% endif %}
-                <li><a href="{{ url_for('about')}}">About</a></li>
-                {% if current_user.is_authenticated %} 
-	              <li>
-	                <form action="{{ url_for('logout') }}" method="POST" style="display:inline;">
-		              <button type="submit">Logout</button>
-	                </form>
-	              </li>
-                {% else %} 
-                <li><a href="{{ url_for('register') }}">Sign in / Sign up</a></li>	  
-                {% endif %}
-            </ul>
-        </div>
-      </header>
+      <div class="navbar__container">
+        <a href="{{ url_for('home') }}" id="navbar__logo">SoMi</a>
+      </div>
+      <div class="hamburger" id="hamburger-menu">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </div>
+      <div class="sidebar" id="sidebar">
+        <button class="close-btn" id="close-menu">&times;</button>
+        <ul>
+          <li><a href="{{ url_for('home') }}">Home</a></li>
+          {% if current_user.is_authenticated %}
+          <li><a href="{{ url_for('saved')}}">Saved</a></li>
+          {% endif %}
+          <li><a href="{{ url_for('about')}}">About</a></li>
+          {% if current_user.is_authenticated %}
+          <li>
+            <form
+              action="{{ url_for('logout') }}"
+              method="POST"
+              style="display: inline"
+            >
+              <button type="submit">Logout</button>
+            </form>
+          </li>
+          {% else %}
+          <li><a href="{{ url_for('register') }}">Sign in / Sign up</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </header>
 
     <div id="gallery"></div>
 
     <div class="form-container">
-    {% for file in files %}
-      <div class="image-container" data-id="{{ file }}" style="position:absolute; width:150px; height:150px;">
+      {% for file in files %}
+      <div
+        class="image-container"
+        data-id="{{ current_slot }}-{{ file }}"
+        style="position: absolute; width: 150px; height: 150px"
+      >
         <img
           class="draggable"
           src="{{ url_for('uploaded_file', filename=file, user_id=current_user.id, slot=current_slot) }}"
           alt="{{ file }}"
-          style="width:100%; height:100%; object-fit:contain;"
+          style="width: 100%; height: 100%; object-fit: contain"
         />
         <div class="resize-handle"></div>
       </div>
-    {% endfor %}
+      {% endfor %}
 
       <div id="upload-status"></div>
     </div>
@@ -79,5 +87,5 @@
     <div id="delete-box">Delete</div>
     <script src="{{ url_for('static', filename='js/home.js') }}"></script>
     <script src="{{ url_for('static', filename='js/global.js') }}"></script>
-</body>
+  </body>
 </html>

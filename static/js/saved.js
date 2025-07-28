@@ -29,13 +29,10 @@ document.getElementById("load-outfit-btn").addEventListener("click", () => {
           }
         }
         localStorage.setItem("imageTags", JSON.stringify(state));
-        alert("Outfit loaded! Reload the home page to see it.");
+        window.location.href = `/home?slot=${selectedSlot}`;
       } else {
-        // No outfit: clear state for this slot
         localStorage.setItem("imageTags", "{}");
-        alert(
-          "No outfit saved in this slot. Blank canvas loaded. Reload the home page to start working in this slot."
-        );
+        window.location.href = `/home?slot=${selectedSlot}`;
       }
     });
 });
