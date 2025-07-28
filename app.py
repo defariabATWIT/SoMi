@@ -18,7 +18,7 @@ app = Flask(__name__)
 
 # image upload configurations
 app.config['MAX_CONTENT_LENGTH'] = 8000000 # 8 MB file limit
-app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.avif', '.HEIC']
+app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.avif', '.heic', '.webp']
 app.config['UPLOAD_PATH'] = UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -241,7 +241,7 @@ def upload_files():
 
     uploaded_file = request.files['file']
     filename = secure_filename(uploaded_file.filename)
-    file_ext = os.path.splitext(filename)[1]
+    file_ext = os.path.splitext(filename)[1].lower()
     if file_ext not in app.config['UPLOAD_EXTENSIONS']:
         return jsonify(error="Invalid file extension"), 400
 
@@ -250,10 +250,6 @@ def upload_files():
     os.makedirs(slot_upload_dir, exist_ok=True)
     file_path = os.path.join(slot_upload_dir, filename)
     uploaded_file.save(file_path)
-
-    # Optionally, insert into Images table
-    # db.session.add(Image(user_id=user_id, slot=slot, filename=filename))
-    # db.session.commit()
 
     return jsonify(success=True, url=url_for('uploaded_file', user_id=user_id, slot=slot, filename=filename))
 
