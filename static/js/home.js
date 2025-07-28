@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const savedTags = JSON.parse(localStorage.getItem("imageTags")) || {};
 
   // Initialize existing images
-  document.querySelectorAll('.image-container').forEach(container => {
+  document.querySelectorAll(".image-container").forEach((container) => {
     setupContainer(container);
   });
 
@@ -24,7 +24,9 @@ document.addEventListener("DOMContentLoaded", () => {
     dropZone.classList.add("dragover");
   });
 
-  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+  dropZone.addEventListener("dragleave", () =>
+    dropZone.classList.remove("dragover")
+  );
 
   dropZone.addEventListener("drop", (e) => {
     e.preventDefault();
@@ -34,60 +36,60 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let currentSlot = 1; // Default to 1
 
-  document.getElementById('save-outfit-btn').addEventListener('click', () => {
-    const state = localStorage.getItem('imageTags');
-    html2canvas(document.body).then(canvas => {
-      const snapshot = canvas.toDataURL('image/png');
-      fetch('/save_outfit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slot: currentSlot, state, snapshot })
+  document.getElementById("save-outfit-btn").addEventListener("click", () => {
+    const state = localStorage.getItem("imageTags");
+    html2canvas(document.body).then((canvas) => {
+      const snapshot = canvas.toDataURL("image/png");
+      fetch("/save_outfit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slot: currentSlot, state, snapshot }),
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          alert('Outfit saved!');
-        } else {
-          alert('Save failed: ' + data.error);
-        }
-      });
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            alert("Outfit saved!");
+          } else {
+            alert("Save failed: " + data.error);
+          }
+        });
     });
   });
 
   function handleFiles(files) {
     const formData = new FormData();
-    Array.from(files).forEach(file => formData.append("file", file));
+    Array.from(files).forEach((file) => formData.append("file", file));
 
     fetch("/upload", {
       method: "POST",
-      body: formData
+      body: formData,
     })
-    .then(response => {
-      // If your Flask upload returns JSON, you can check for success here
-      // Reload the page after successful upload
-      if (response.ok) {
-        location.reload();
-      } else {
-        response.json().then(data => {
-          alert(data.error || "Upload failed.");
+      .then((response) => {
+        // If your Flask upload returns JSON, you can check for success here
+        // Reload the page after successful upload
+        if (response.ok) {
+          location.reload();
+        } else {
+          response.json().then((data) => {
+            alert(data.error || "Upload failed.");
+          });
+        }
+      })
+      .then((data) => {
+        data.urls.forEach((url) => {
+          const container = createImageContainer(url);
+          container.dataset.id = `cont_${idCounter++}`;
+          setupContainer(container);
         });
-      }
-    })
-    .then(data => {
-      data.urls.forEach(url => {
-        const container = createImageContainer(url);
-        container.dataset.id = `cont_${idCounter++}`;
-        setupContainer(container);
-      });
-    })
-    .catch(console.error);
+      })
+      .catch(console.error);
   }
 
   // --- Container Management ---
   function createImageContainer(src) {
     const container = document.createElement("div");
     container.className = "image-container";
-    
+
     const img = document.createElement("img");
     img.className = "draggable";
     img.src = src;
@@ -104,26 +106,33 @@ document.addEventListener("DOMContentLoaded", () => {
   function setupContainer(container) {
     // --- Position & Size Initialization ---
     let savedData = savedTags[container.dataset.id];
+    if (savedData?.markedForDeletion) {
+      container.classList.add("marked-for-deletion");
+      container.style.display = "none"; // Keep it hidden until restored
+      return;
+    }
     container.style.position = "absolute";
-    
+
     // Set default size
     container.style.width = savedData?.size?.width || "150px";
     container.style.height = savedData?.size?.height || "150px";
-  
+
     // Apply saved position or random position
     if (savedData?.position) {
       container.style.left = savedData.position.left;
       container.style.top = savedData.position.top;
     } else {
-      container.style.left = Math.random() * (window.innerWidth - 200) + 20 + "px";
-      container.style.top = Math.random() * (window.innerHeight - 200) + 20 + "px";
+      container.style.left =
+        Math.random() * (window.innerWidth - 200) + 20 + "px";
+      container.style.top =
+        Math.random() * (window.innerHeight - 200) + 20 + "px";
       saveContainerState(container);
       savedData = savedTags[container.dataset.id];
     }
-  
+
     // --- Element References ---
-    const resizeHandle = container.querySelector('.resize-handle');
-  
+    const resizeHandle = container.querySelector(".resize-handle");
+
     // --- Event Handlers ---
     let isDragging = false;
     let isResizing = false;
@@ -139,11 +148,11 @@ document.addEventListener("DOMContentLoaded", () => {
     container.addEventListener("mousedown", (e) => {
       if (e.button !== 0) return; // Only left click
       e.preventDefault();
-  
+
       const rect = container.getBoundingClientRect();
       offsetX = e.clientX - rect.left;
       offsetY = e.clientY - rect.top;
-  
+
       if (e.target === resizeHandle) {
         // Resize handling
         isResizing = true;
@@ -162,13 +171,13 @@ document.addEventListener("DOMContentLoaded", () => {
         document.addEventListener("mouseup", stopDrag);
       }
     });
-  
+
     function handleDrag(e) {
       if (!isDragging) return;
       container.style.left = e.clientX - offsetX + "px";
       container.style.top = e.clientY - offsetY + "px";
     }
-  
+
     function stopDrag() {
       isDragging = false;
       container.style.cursor = "grab";
@@ -177,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
       saveContainerState(container);
       checkDeleteBox(container);
     }
-  
+
     function handleResize(e) {
       if (!isResizing) return;
       const dx = e.clientX - startX;
@@ -185,71 +194,46 @@ document.addEventListener("DOMContentLoaded", () => {
       container.style.width = Math.max(startWidth + dx, 50) + "px";
       container.style.height = Math.max(startHeight + dy, 50) + "px";
     }
-  
+
     function stopResize() {
       isResizing = false;
       document.removeEventListener("mousemove", handleResize);
       document.removeEventListener("mouseup", stopResize);
       saveContainerState(container);
     }
-  
+
     function saveContainerState(cont) {
       savedTags[cont.dataset.id] = {
-        position: { 
-          left: cont.style.left, 
-          top: cont.style.top 
+        position: {
+          left: cont.style.left,
+          top: cont.style.top,
         },
-        size: { 
-          width: cont.style.width, 
-          height: cont.style.height 
+        size: {
+          width: cont.style.width,
+          height: cont.style.height,
         },
-        ...(savedTags[cont.dataset.id]?.tags || {})
+        ...(savedTags[cont.dataset.id]?.tags
+          ? { tags: savedTags[cont.dataset.id].tags }
+          : {}),
+        markedForDeletion: cont.classList.contains("marked-for-deletion"),
       };
-      localStorage.setItem('imageTags', JSON.stringify(savedTags));
+      localStorage.setItem("imageTags", JSON.stringify(savedTags));
     }
-  
+
     function checkDeleteBox(cont) {
       const contRect = cont.getBoundingClientRect();
       const delRect = deleteBox.getBoundingClientRect();
-      
-      if (contRect.left < delRect.right && 
-          contRect.right > delRect.left &&
-          contRect.top < delRect.bottom && 
-          contRect.bottom > delRect.top) {
-        // DOM removal
-        cont.remove();
 
-        //Remove client-side
-        delete savedTags[cont.dataset.id];
-        localStorage.setItem('imageTags', JSON.stringify(savedTags));
-
-        // Server-side deletion
-        const img = cont.querySelector('img');
-        let filename = null;
-        let user_id = null;
-        if (img) {
-          const url = new URL(img.src, window.location.origin);
-          // url.pathname: /uploads/<user_id>/<filename>
-          const parts = url.pathname.split('/');
-          user_id = parts[2];
-          filename = parts[3];
-        }
-        if (filename && user_id) {
-          fetch('/delete_image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ filename, user_id })
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (!data.success) {
-              alert('Server failed to delete image: ' + (data.error || 'Unknown error'));
-            }
-          })
-          .catch(err => {
-            alert('Network or server error: ' + err);
-          });
-        }
+      if (
+        contRect.left < delRect.right &&
+        contRect.right > delRect.left &&
+        contRect.top < delRect.bottom &&
+        contRect.bottom > delRect.top
+      ) {
+        // Mark instead of delete
+        cont.classList.add("marked-for-deletion");
+        cont.style.display = "none"; // Hide from UI
+        saveContainerState(cont);
       }
     }
   }
@@ -271,7 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const containerId = container.dataset.id;
     const tags = savedTags[containerId]?.tags || {};
     currentTagContainer = container;
-    
+
     // Position form at click location
     tagForm.style.display = "block";
     tagForm.style.left = `${e.clientX}px`;
@@ -279,50 +263,96 @@ document.addEventListener("DOMContentLoaded", () => {
     tagForm.style.position = "fixed";
 
     // Populate form fields
-    tagForm.querySelector('.price-input').value = tags.price || '';
-    tagForm.querySelector('.name-input').value = tags.name || '';
-    tagForm.querySelector('.link-input').value = tags.link || '';
+    tagForm.querySelector(".price-input").value = tags.price || "";
+    tagForm.querySelector(".name-input").value = tags.name || "";
+    tagForm.querySelector(".link-input").value = tags.link || "";
 
     // Close handler
-    tagForm.querySelector('.close-button').onclick = () => {
+    tagForm.querySelector(".close-button").onclick = () => {
       tagForm.style.display = "none";
     };
 
     // Save handler
-    tagForm.querySelector('.save-tags-btn').onclick = () => {
-      if (!savedTags[containerId]) savedTags[containerId] = {};
-      savedTags[containerId].tags = {
-        price: tagForm.querySelector('.price-input').value,
-        name: tagForm.querySelector('.name-input').value,
-        link: tagForm.querySelector('.link-input').value
-      };
-      localStorage.setItem('imageTags', JSON.stringify(savedTags));
-      tagForm.style.display = "none";
-    };
+    document.getElementById("save-outfit-btn").addEventListener("click", () => {
+      const tagsToDelete = [];
+
+      // Remove deleted containers before saving
+      document
+        .querySelectorAll(".image-container.marked-for-deletion")
+        .forEach((cont) => {
+          const id = cont.dataset.id;
+          const img = cont.querySelector("img");
+          if (!img) return;
+
+          const url = new URL(img.src, window.location.origin);
+          const parts = url.pathname.split("/");
+          const user_id = parts[2];
+          const filename = parts[3];
+
+          tagsToDelete.push({ id, filename, user_id });
+
+          // Remove from UI
+          cont.remove();
+          delete savedTags[id];
+        });
+
+      localStorage.setItem("imageTags", JSON.stringify(savedTags)); // Save updated state
+
+      // Call server to delete images
+      tagsToDelete.forEach(({ filename, user_id }) => {
+        fetch("/delete_image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename, user_id }),
+        }).catch(console.error);
+      });
+
+      // Save full outfit
+      const state = localStorage.getItem("imageTags");
+      html2canvas(document.body).then((canvas) => {
+        const snapshot = canvas.toDataURL("image/png");
+        fetch("/save_outfit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slot: currentSlot, state, snapshot }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              alert("Outfit saved!");
+            } else {
+              alert("Save failed: " + data.error);
+            }
+          });
+      });
+    });
 
     // Remove background handler
-    tagForm.querySelector('.remove-bg-btn').onclick = () => {
-      const img = currentTagContainer.querySelector('img');
+    tagForm.querySelector(".remove-bg-btn").onclick = () => {
+      const img = currentTagContainer.querySelector("img");
       let filename = null;
       if (img) {
         const url = new URL(img.src, window.location.origin);
-        filename = url.pathname.split('/').pop();
+        filename = url.pathname.split("/").pop();
       }
       if (filename) {
-        fetch('/remove_bg', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename })
+        fetch("/remove_bg", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename }),
         })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            img.src = img.src.split('?')[0] + '?t=' + Date.now();
-            alert('Background removed!');
-          } else {
-            alert('Failed to remove background: ' + (data.error || 'Unknown error'));
-          }
-        });
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              img.src = img.src.split("?")[0] + "?t=" + Date.now();
+              alert("Background removed!");
+            } else {
+              alert(
+                "Failed to remove background: " +
+                  (data.error || "Unknown error")
+              );
+            }
+          });
       }
     };
   }

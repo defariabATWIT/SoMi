@@ -19,7 +19,14 @@ document.getElementById("load-outfit-btn").addEventListener("click", () => {
     .then((res) => res.json())
     .then((data) => {
       if (data.success) {
-        localStorage.setItem("imageTags", data.state);
+        // Parse, clean markedForDeletion, then save
+        const state = JSON.parse(data.state);
+        for (const id in state) {
+          if (state[id].markedForDeletion) {
+            delete state[id].markedForDeletion;
+          }
+        }
+        localStorage.setItem("imageTags", JSON.stringify(state));
         alert("Outfit loaded! Reload the home page to see it.");
       } else {
         alert("Load failed: " + data.error);
