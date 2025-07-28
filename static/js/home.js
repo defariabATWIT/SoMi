@@ -34,7 +34,31 @@ document.addEventListener("DOMContentLoaded", () => {
     handleFiles(e.dataTransfer.files);
   });
 
-  let currentSlot = 1; // Default to 1
+  // Use localStorage for currentSlot, default to 1 if not set
+  let currentSlot = parseInt(localStorage.getItem("currentSlot") || "1", 10);
+
+  // Function to switch slot and clear/load state
+  function switchToSlot(slot) {
+    currentSlot = slot;
+    localStorage.setItem("currentSlot", slot);
+
+    // Try to load outfit state for this slot
+    fetch(`/load_outfit/${slot}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          // Load state into localStorage and reload
+          localStorage.setItem("imageTags", data.state);
+        } else {
+          // No outfit saved: clear canvas state
+          localStorage.setItem("imageTags", "{}");
+        }
+        location.reload();
+      });
+  }
+
+  // Optionally, expose switchToSlot globally for use from saved.js
+  window.switchToSlot = switchToSlot;
 
   document.getElementById("save-outfit-btn").addEventListener("click", () => {
     const state = localStorage.getItem("imageTags");
@@ -59,6 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function handleFiles(files) {
     const formData = new FormData();
     Array.from(files).forEach((file) => formData.append("file", file));
+    formData.append("slot", currentSlot); // Add slot info
 
     fetch("/upload", {
       method: "POST",
@@ -303,7 +328,7 @@ document.addEventListener("DOMContentLoaded", () => {
         fetch("/delete_image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filename, user_id }),
+          body: JSON.stringify({ filename, user_id, slot: currentSlot }), // <-- add slot
         }).catch(console.error);
       });
 
@@ -339,18 +364,16 @@ document.addEventListener("DOMContentLoaded", () => {
         fetch("/remove_bg", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filename }),
+          body: JSON.stringify({ filename, slot: currentSlot }), // <-- add slot
         })
           .then((res) => res.json())
           .then((data) => {
             if (data.success) {
-              img.src = img.src.split("?")[0] + "?t=" + Date.now();
               alert("Background removed!");
+              // Optionally, reload the image or the whole page
+              location.reload();
             } else {
-              alert(
-                "Failed to remove background: " +
-                  (data.error || "Unknown error")
-              );
+              alert("Error removing background: " + data.error);
             }
           });
       }

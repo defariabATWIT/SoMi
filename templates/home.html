@@ -53,7 +53,7 @@
       <div class="image-container" data-id="{{ file }}" style="position:absolute; width:150px; height:150px;">
         <img
           class="draggable"
-          src="{{ url_for('uploaded_file', filename=file, user_id=current_user.id) }}"
+          src="{{ url_for('uploaded_file', filename=file, user_id=current_user.id, slot=current_slot) }}"
           alt="{{ file }}"
           style="width:100%; height:100%; object-fit:contain;"
         />

@@ -18,6 +18,8 @@ document.getElementById("load-outfit-btn").addEventListener("click", () => {
   fetch(`/load_outfit/${selectedSlot}`)
     .then((res) => res.json())
     .then((data) => {
+      // Always switch slot, even if not found
+      localStorage.setItem("currentSlot", selectedSlot);
       if (data.success) {
         // Parse, clean markedForDeletion, then save
         const state = JSON.parse(data.state);
@@ -29,7 +31,11 @@ document.getElementById("load-outfit-btn").addEventListener("click", () => {
         localStorage.setItem("imageTags", JSON.stringify(state));
         alert("Outfit loaded! Reload the home page to see it.");
       } else {
-        alert("Load failed: " + data.error);
+        // No outfit: clear state for this slot
+        localStorage.setItem("imageTags", "{}");
+        alert(
+          "No outfit saved in this slot. Blank canvas loaded. Reload the home page to start working in this slot."
+        );
       }
     });
 });

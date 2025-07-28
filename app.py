@@ -28,7 +28,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 # Connect to postgresql, hosted on render.com
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://somi_database_bhz4_user:XmVpgYlrnzIdCFrrwltUx2i9edn8OPRc@dpg-d1ukkqbe5dus73dqmm20-a/somi_database_bhz4' 
 # Local Host, uncomment below line for local testing
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://somiadmin:sweng2025@localhost/somidb'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://somiadmin:sweng2025@localhost/somidb'
 
 # create key for hash
 app.config['SECRET_KEY'] = '123'
@@ -126,17 +126,12 @@ def home():
     
     # user id of user currently logged in
     user_id = current_user.id
-    # /uploads/<user_id>
-    user_directory = os.path.join(app.config['UPLOAD_PATH'], str(user_id))
-
-
-    if not os.path.exists(user_directory):
-        return render_template('home.html', files=[])
-
-    # get all files in user directory 
-    files = os.listdir(user_directory)
-    #render canvas and all files
-    return render_template('home.html', files=files, current_slot=1)
+    current_slot = int(request.args.get('slot', 1))
+    slot_dir = os.path.join(app.config['UPLOAD_PATH'], str(user_id), str(current_slot))
+    files = []
+    if os.path.exists(slot_dir):
+        files = os.listdir(slot_dir)
+    return render_template('home.html', files=files, current_slot=current_slot)
 
 #####################################################################
 #                            saved outfits                          #
@@ -244,54 +239,35 @@ def upload_files():
    
     # get user id
     user_id = current_user.id
-    
-    # wait for user to upload file on website
+    slot = int(request.form.get('slot', 1))  # Get slot from form or default to 1
+
     uploaded_file = request.files['file']
     filename = secure_filename(uploaded_file.filename)
+    file_ext = os.path.splitext(filename)[1]
+    if file_ext not in app.config['UPLOAD_EXTENSIONS']:
+        return jsonify(error="Invalid file extension"), 400
 
-    # if file exists, 
-    if filename != '':
-        
-        # validate file extension
-        file_ext = os.path.splitext(filename)[1]
-        if file_ext not in app.config['UPLOAD_EXTENSIONS']:
-            abort(400)
-    
-        # uploads/<user_id>/
-        usr_upload_directory = (os.path.join(app.config['UPLOAD_PATH'], str(user_id)))
-        # make user directoy if it doesn't already exist
-        if not os.path.exists(usr_upload_directory):
-            os.makedirs(usr_upload_directory)
-        
-        # uploads/<user_id>/<filename>
-        filepath = os.path.join(usr_upload_directory, filename)
-        # upload file to user directory
-        uploaded_file.save(filepath)
-        flash('File uploaded successfully.')
+    # uploads/<user_id>/<slot>/
+    slot_upload_dir = os.path.join(app.config['UPLOAD_PATH'], str(user_id), str(slot))
+    os.makedirs(slot_upload_dir, exist_ok=True)
+    file_path = os.path.join(slot_upload_dir, filename)
+    uploaded_file.save(file_path)
 
-        # Convert AVIF/WEBP to JPG and use the JPG as the displayed file
-        if file_ext in [".avif", ".webp"]:
-            input_path = filepath
-            jpg_path = convert_to_jpg(input_path)
-            # Optionally, remove the original file to only keep the JPG
-            os.remove(input_path)
+    # Optionally, insert into Images table
+    # db.session.add(Image(user_id=user_id, slot=slot, filename=filename))
+    # db.session.commit()
 
-    return redirect(url_for('home'))
+    return jsonify(success=True, url=url_for('uploaded_file', user_id=user_id, slot=slot, filename=filename))
 
 # New route to serve uploaded images
-@app.route('/uploads/<user_id>/<filename>')
+@app.route('/uploads/<user_id>/<slot>/<filename>')
 @login_required
-def uploaded_file(user_id, filename):
-
-    # get user directory
-    usr_directory = os.path.join(app.config['UPLOAD_PATH'], str(user_id))
-
-    # prevent unauthorized access to other user's images
+def uploaded_file(user_id, slot, filename):
+    # Only allow access to own images
     if str(current_user.id) != user_id:
         abort(400)
-
-    # serve the image
-    return send_from_directory(usr_directory, filename)
+    directory = os.path.join(app.config['UPLOAD_PATH'], user_id, slot)
+    return send_from_directory(directory, filename)
 
 # Delete that jittleyang
 @app.route('/delete_image', methods=['POST'])
@@ -299,13 +275,13 @@ def uploaded_file(user_id, filename):
 def delete_image():
     data = request.get_json()
     filename = data.get('filename')
-    user_id = data.get('user_id', current_user.id)  # fallback to current user
+    slot = str(data.get('slot'))
+    user_id = data.get('user_id', current_user.id)
 
-    if not filename:
-        return jsonify({'error': 'No filename provided'}), 400
+    if not filename or not slot:
+        return jsonify({'error': 'No filename or slot provided'}), 400
 
-    # Delete file from disk
-    file_path = os.path.join(app.config['UPLOAD_PATH'], str(user_id), filename)
+    file_path = os.path.join(app.config['UPLOAD_PATH'], str(user_id), slot, filename)
     if os.path.exists(file_path):
         os.remove(file_path)
         return jsonify({'success': True})
@@ -323,6 +299,18 @@ def save_outfit():
     snapshot = data.get('snapshot')
 
     user_id = current_user.id
+
+    # Save to database
+    outfit = Outfit.query.filter_by(user_id=user_id, slot=slot).first()
+    if outfit:
+        outfit.state = state
+        outfit.snapshot = snapshot
+    else:
+        outfit = Outfit(user_id=user_id, slot=slot, state=state, snapshot=snapshot)
+        db.session.add(outfit)
+    db.session.commit()
+
+    # Optionally, still save files to disk if you want
     user_dir = os.path.join('user_data', str(user_id))
     snapshots_dir = os.path.join(user_dir, 'snapshots')
     os.makedirs(snapshots_dir, exist_ok=True)
@@ -335,7 +323,6 @@ def save_outfit():
     if snapshot:
         try:
             header, encoded = snapshot.split(',', 1)
-            print("Snapshot starts with:", snapshot[:30])
             image_data = base64.b64decode(encoded)
             with open(os.path.join(snapshots_dir, f'slot_{slot}.png'), 'wb') as f:
                 f.write(image_data)
@@ -366,18 +353,18 @@ def serve_snapshot(user_id, filename):
 def remove_bg():
     data = request.get_json()
     filename = data.get('filename')
+    slot = str(data.get('slot'))
     user_id = current_user.id
 
-    if not filename:
-        return jsonify({'success': False, 'error': 'No filename provided'}), 400
+    if not filename or not slot:
+        return jsonify({'success': False, 'error': 'No filename or slot provided'}), 400
 
-    usr_upload_directory = os.path.join(app.config['UPLOAD_PATH'], str(user_id))
+    usr_upload_directory = os.path.join(app.config['UPLOAD_PATH'], str(user_id), slot)
     input_path = os.path.join(usr_upload_directory, filename)
     output_path = os.path.join(usr_upload_directory, "processed-" + filename)
 
     try:
         remove_background(input_path, output_path)
-        # Optionally, replace the original image with the processed one
         os.replace(output_path, input_path)
         return jsonify({'success': True})
     except Exception as e:
