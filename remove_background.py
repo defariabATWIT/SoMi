@@ -4,7 +4,7 @@ import os
 import uuid
 
 # Please replace with your own apiKey
-apiKey = 'sandbox_c9a95736039eb402b1a3ee516762b99cbc91c42e'
+apiKey = 'sandbox_sk_pr_default_e4bfabef386b39b80820665d686f141b0f3e0e4c'
 
 def remove_background(input_image_path, output_image_path):
     # Define multipart boundary
