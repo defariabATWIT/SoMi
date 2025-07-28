@@ -23,8 +23,6 @@ app.config['UPLOAD_PATH'] = UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-#app.config['UPLOAD_PATH'] = '/var/www/somi/uploads/'
-
 # Connect to postgresql, hosted on render.com
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://somi_database_bhz4_user:XmVpgYlrnzIdCFrrwltUx2i9edn8OPRc@dpg-d1ukkqbe5dus73dqmm20-a/somi_database_bhz4' 
 # Local Host, uncomment below line for local testing
@@ -169,10 +167,10 @@ def register():
             return redirect(url_for('register'))
 
         # hash the password
-        hash = bcrypt.generate_password_hash(password).decode('utf-8')
+        hashkey = bcrypt.generate_password_hash(password).decode('utf-8')
         
         # add user to database
-        user = User(username=username, password=hash)
+        user = User(username=username, password=hashkey)
         db.session.add(user)
         db.session.commit()
 
@@ -322,7 +320,7 @@ def save_outfit():
     # Save PNG image (if provided)
     if snapshot:
         try:
-            header, encoded = snapshot.split(',', 1)
+            _, encoded = snapshot.split(',', 1)
             image_data = base64.b64decode(encoded)
             with open(os.path.join(snapshots_dir, f'slot_{slot}.png'), 'wb') as f:
                 f.write(image_data)
@@ -369,12 +367,3 @@ def remove_bg():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
-
-###########################
-###      END ROUTES     ###
-###########################
-
-#####################################################################
-
-#if __name__ == ("__main__"):
-#    app.run(debug=True)

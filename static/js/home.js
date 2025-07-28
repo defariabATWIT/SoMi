@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const fileInput = document.getElementById("file-input");
   const gallery = document.getElementById("gallery");
   const deleteBox = document.getElementById("delete-box");
-  let idCounter = 0;
 
   // --- State Management ---
   let savedTags = JSON.parse(localStorage.getItem("imageTags")) || {};
@@ -143,29 +142,6 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .catch(console.error);
     });
-  }
-
-  // --- Container Management ---
-  function createImageContainer(src) {
-    const container = document.createElement("div");
-    container.className = "image-container";
-
-    const img = document.createElement("img");
-    img.className = "draggable";
-    img.src = src;
-    img.style.objectFit = "contain";
-
-    const resizeHandle = document.createElement("div");
-    resizeHandle.className = "resize-handle";
-
-    // Use only filename as data-id
-    const url = new URL(src, window.location.origin);
-    const filename = url.pathname.split("/").pop();
-    container.dataset.id = filename;
-
-    container.append(img, resizeHandle);
-    gallery.appendChild(container);
-    return container;
   }
 
   function setupContainer(container) {
@@ -319,7 +295,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function openTagForm(e, container) {
     const containerId = container.dataset.id;
     const tags = savedTags[containerId]?.tags || {};
-    currentTagContainer = container;
+    let currentTagContainer = container;
 
     // Position form at click location
     tagForm.style.display = "block";

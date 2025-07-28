@@ -1,131 +1,113 @@
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: 'Kumbh Sans', sans-serif;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Kumbh Sans", sans-serif;
 }
 
 body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 
 /* Navbar Styles */
 .navbar {
-    background: #fff;
-    height: 80px;
-    width: 100%;
-    position: fixed;
-    top: 0;
-    display: flex;
-    z-index: 1;
+  background: #fff;
+  height: 80px;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  display: flex;
+  z-index: 1;
 }
 
 .navbar__container {
-    margin: 0 auto;
-    padding: 0 50px;
+  margin: 0 auto;
+  padding: 0 50px;
 }
 
 #navbar__logo {
-    text-align: center;
-    flex: 0 0 auto;
-    background-color: #1ae966;
-    background-image: linear-gradient(to top, #3bf8d2 0%, #4c6bf4 100%);
-    background-size: 100%;
-    -webkit-background-clip: text;
-    background-clip: text; /* Added for compatibility */
-    user-select: none;
-    -moz-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    -moz-text-fill-color: transparent;
-    cursor: pointer;
-    text-decoration: none;
-    font-size: 4rem;
+  text-align: center;
+  flex: 0 0 auto;
+  background-color: #1ae966;
+  background-image: linear-gradient(to top, #3bf8d2 0%, #4c6bf4 100%);
+  background-size: 100%;
+  -webkit-background-clip: text;
+  background-clip: text; /* Added for compatibility */
+  user-select: none;
+  -moz-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -moz-text-fill-color: transparent;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 4rem;
 }
 
 .hamburger {
-    display: flex;
-    flex-direction: column;
-    cursor: pointer;
-    position: absolute;
-    right: 20px;
-    top: 20px;
-    z-index: 11;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  z-index: 11;
 }
 
 .bar {
-    width: 30px;
-    height: 4px;
-    margin: 5px 0;
-    background-color: black;
+  width: 30px;
+  height: 4px;
+  margin: 5px 0;
+  background-color: black;
 }
 
 /* Sidebar Menu */
 .sidebar {
-    position: fixed;
-    top: 10px;
-    right: -300px;
-    width: 250px;
-    height: 300px;
-    background: #c4c4c4;
-    border-radius: 20px;
-    padding: 20px;
-    transition: right 0.3s ease-in-out;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  position: fixed;
+  top: 10px;
+  right: -300px;
+  width: 250px;
+  height: 300px;
+  background: #c4c4c4;
+  border-radius: 20px;
+  padding: 20px;
+  transition: right 0.3s ease-in-out;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin-top: 50px;
+  list-style: none;
+  padding: 0;
+  margin-top: 50px;
 }
 
 .sidebar ul li {
-    margin: 20px 0;
+  margin: 20px 0;
 }
 
 .sidebar ul li a {
-    text-decoration: none;
-    color: black;
-    font-size: 24px;
+  text-decoration: none;
+  color: black;
+  font-size: 24px;
 }
 
 .close-btn {
-    background: none;
-    border: none;
-    font-size: 30px;
-    cursor: pointer;
-    position: absolute;
-    top: 15px;
-    left: 15px;
+  background: none;
+  border: none;
+  font-size: 30px;
+  cursor: pointer;
+  position: absolute;
+  top: 15px;
+  left: 15px;
 }
 
 .sidebar.active {
-    right: 10px;
+  right: 10px;
 }
 
 /* Saved Outfits Section */
-/*.saved-outfits-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    margin-top: 40px;
-}
-
-.outfit-numbers {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-right: 0;
-    padding-left: 20px;
-    margin-left: 90px; 
-    margin-top: 40px;
-}
-*/
 .saved-outfits-container {
   display: flex;
   flex-direction: column;
@@ -143,79 +125,57 @@ body {
   gap: 10px;
 }
 .number {
-    font-size: 2rem;
-    cursor: pointer;
-    margin: 10px 0;
-    padding: 5px 10px;
-    transition: all 0.2s ease-in-out;
-    border-radius: 5px;
+  font-size: 2rem;
+  cursor: pointer;
+  margin: 10px 0;
+  padding: 5px 10px;
+  transition: all 0.2s ease-in-out;
+  border-radius: 5px;
 }
 
 .number.active {
-    border: 2px solid green;
-    border-radius: 8px;
-    padding: 5px 10px;
+  border: 2px solid green;
+  border-radius: 8px;
+  padding: 5px 10px;
 }
-
-/* .outfit-preview {
-    font-size: 1.2rem;
-    text-align: center;
-    align-self: center;
-    margin: 0 auto;
-}
-*/
 
 .number.selected {
   background: #333;
   color: #fff;
   border-radius: 50%;
 }
+
 .outfit-actions {
-  margin: 1em 0;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
   display: flex;
-  gap: 1em;
-}
-
-.outfit-actions {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    display: flex;
-    gap: 10px; /* small gap between buttons */
-    z-index: 1000; /* ensures it stays on top */
-}
-
-.outfit-actions {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    display: flex;
-    gap: 12px;
-    z-index: 1000;
+  gap: 12px;
+  z-index: 1000;
 }
 
 .outfit-actions button {
-    padding: 18px 24px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #4d5efc;
-    background-color: #f7f7fc;
-    border: 3px solid #4d5efc; /* Solid border instead of dashed */
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.25s ease;
+  padding: 18px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #4d5efc;
+  background-color: #f7f7fc;
+  border: 3px solid #4d5efc; /* Solid border instead of dashed */
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.25s ease;
 }
 
 .outfit-actions button:hover:not(:disabled) {
-    background-color: #e1e6ff;
-    transform: translateY(-1px);
+  background-color: #e1e6ff;
+  transform: translateY(-1px);
 }
 
 .outfit-actions button:disabled {
-    background-color: #f0f0f0;
-    border-color: #bbb;
-    color: #aaa;
-    cursor: not-allowed;
+  background-color: #f0f0f0;
+  border-color: #bbb;
+  color: #aaa;
+  cursor: not-allowed;
 }
 
 .outfit-previews {
@@ -270,23 +230,3 @@ body {
   font-weight: bold;
   cursor: pointer;
 }
-
-.outfit-preview {
-  width: 150px;
-  height: 150px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #ccc;
-  background: #fafafa;
-  border-radius: 8px;
-  overflow: hidden;
-  position: relative;
-}
-
-.outfit-preview img {
-  max-width: 100%;
-  max-height: 100%;
-  display: block;
-}
-
